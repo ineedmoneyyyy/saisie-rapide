@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Saisie rapide</title>
+  <!-- iPhone 13 Pro / mobile-first -->
+  <meta name="viewport" content="width=390, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+
+  <style>
+    :root{--primary:#6f57d3;--bg:#f2f2f7;--fg:#1c1c1e;--border:#d9d9de;--r:12px;}
+    html,body{height:100%}
+    body{margin:0;padding:20px;background:var(--bg);color:var(--fg);
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;font-size:18px;line-height:1.4}
+    .container{max-width:390px;margin:0 auto}
+    h1{font-size:26px;font-weight:800;margin:0 0 18px}
+    label{display:block;margin:16px 0 6px;font-size:18px;font-weight:700}
+    input,select{width:100%;box-sizing:border-box;background:#fff;border:1px solid var(--border);border-radius:var(--r);
+                 padding:14px 16px;font-size:18px;min-height:52px;outline:none}
+    input:focus,select:focus{border-color:#c7b8ff;box-shadow:0 0 0 3px rgba(111,87,211,.15)}
+    button{width:100%;padding:16px;margin-top:16px;border:none;border-radius:14px;background:var(--primary);
+           color:#fff;font-size:18px;font-weight:800;cursor:pointer}
+    button:active{background:#5b3fb3}
+    .msg{margin-top:10px;font-size:16px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Saisie rapide</h1>
+
+    <form id="saisieForm">
+      <label for="type">Type de transaction</label>
+      <select id="type" name="type" required>
+        <option value="Achat stock">Achat stock</option>
+        <option value="Ventes / Cashout">Vente/Cashout</option>
+        <option value="Frais annexes">Frais annexes</option>
+        <option value="Abonnement (mensuel)">Abonnement (mensuel)</option>
+        <option value="Paiement perso">Paiement perso</option>
+      </select>
+
+      <label for="item">Item / Référence</label>
+      <input type="text" id="item" name="item" placeholder="Ex: 100 Jeans Levi’s 501">
+
+      <label for="date">Date</label>
+      <input type="date" id="date" name="date">
+
+      <label for="montant">Montant (€)</label>
+      <input type="number" id="montant" name="montant" inputmode="decimal" step="0.01" placeholder="ex: 79.90">
+
+      <label for="fournisseur">Fournisseur</label>
+      <input type="text" id="fournisseur" name="fournisseur" placeholder="ex: Vinted">
+
+      <label for="payeur">Payeur</label>
+      <input type="text" id="payeur" name="payeur" placeholder="Ton nom">
+
+      <button type="submit">+ Ajouter</button>
+      <div id="feedback" class="msg"></div>
+    </form>
+  </div>
+
+  <script>
+    // Ton endpoint Apps Script (déployé en Application Web – accès: Tout le monde)
+    const ENDPOINT = "https://script.google.com/macros/s/AKfycbw-kCzf14Oc6ww92VkcJXb5103tBBlTCBrPezQNdxJx-jwwo5erUTFJSy75ChPOfDZEuQ/exec";
+
+    // Date du jour par défaut
+    const d=new Date(), yyyy=d.getFullYear(), mm=String(d.getMonth()+1).padStart(2,"0"), dd=String(d.getDate()).padStart(2,"0");
+    document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
+
+    document.getElementById("saisieForm").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const $ = id => document.getElementById(id);
+      const payload = {
+        type: $("type").value,
+        item: $("item").value,
+        dateISO: $("date").value,
+        montant: $("montant").value,
+        fournisseur: $("fournisseur").value,
+        payeur: $("payeur").value
+      };
+
+      $("feedback").textContent = "Envoi...";
+      try{
+        const res = await fetch(ENDPOINT, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json().catch(()=>({}));
+        if(!res.ok || json.ok===false){ throw new Error(json.error||("HTTP "+res.status)); }
+        $("feedback").textContent = "✅ Ajouté";
+        e.target.reset();
+        $("date").value = `${yyyy}-${mm}-${dd}`;
+      }catch(err){
+        $("feedback").textContent = "❌ Erreur: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
